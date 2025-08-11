@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getMachines, lockMachine, bookMachine, releaseLock } from '../services/api';
 import ConfirmationModal from './ConfirmationModal';
-import './MachineGrid.css';
 
 const MachineGrid = () => {
   const [machines, setMachines] = useState([]);
@@ -79,20 +78,59 @@ const MachineGrid = () => {
     fetchMachines();
   };
 
+  const getMachineStatusClass = (status: string) => {
+    switch(status) {
+      case 'available':
+        return 'bg-green-100 hover:bg-green-200 border-green-400 cursor-pointer';
+      case 'locked':
+        return 'bg-yellow-100 border-yellow-400 cursor-not-allowed';
+      case 'booked':
+        return 'bg-red-100 border-red-400 cursor-not-allowed';
+      default:
+        return 'bg-green-100 hover:bg-green-200 border-green-400 cursor-pointer';
+    }
+  };
+
   return (
-    <div>
-      <h1>Fitness Class - Select Your Machine</h1>
-      <div className="machine-grid">
-        {machines.map((machine: any) => (
-          <div 
-            key={machine.id} 
-            className={`machine-item ${machine.status || 'available'}`}
-            onClick={() => handleMachineClick(machine)}
-          >
-            <div>{machine.name}</div>
-            <small>{machine.status || 'available'}</small>
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-3xl font-bold text-center mb-8 text-gray-800">
+          Fitness Class - Select Your Machine
+        </h1>
+        <div className="grid grid-cols-5 gap-3 md:gap-4">
+          {machines.map((machine: any) => (
+            <div 
+              key={machine.id} 
+              className={`
+                border-2 rounded-lg p-4 text-center transition-all
+                ${getMachineStatusClass(machine.status || 'available')}
+              `}
+              onClick={() => handleMachineClick(machine)}
+            >
+              <div className="font-semibold text-lg">{machine.name}</div>
+              <div className="text-sm mt-1 capitalize">
+                {machine.status || 'available'}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-8 bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold mb-3">Legend:</h2>
+          <div className="flex flex-wrap gap-4">
+            <div className="flex items-center">
+              <div className="w-4 h-4 bg-green-100 border-2 border-green-400 rounded mr-2"></div>
+              <span className="text-sm">Available</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-4 h-4 bg-yellow-100 border-2 border-yellow-400 rounded mr-2"></div>
+              <span className="text-sm">Locked (Reserved)</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-4 h-4 bg-red-100 border-2 border-red-400 rounded mr-2"></div>
+              <span className="text-sm">Booked</span>
+            </div>
           </div>
-        ))}
+        </div>
       </div>
       <ConfirmationModal
         isOpen={showModal}
