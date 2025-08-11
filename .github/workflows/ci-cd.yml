@@ -1,0 +1,65 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: fitness_booking
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Install and test backend
+      working-directory: ./backend
+      env:
+        DATABASE_URL: postgresql://user:password@localhost:5432/fitness_booking
+      run: |
+        npm ci
+        npm run db:migrate
+        npx tsc --noEmit || true
+    
+    - name: Install and build frontend
+      working-directory: ./frontend
+      run: |
+        npm ci
+        npm run build
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Deploy to production
+      run: |
+        echo "Deploy to AWS EC2 or other hosting"
+        echo "This would typically:"
+        echo "  - SSH to EC2 instance"
+        echo "  - Pull latest code"
+        echo "  - Restart Docker containers"
