@@ -6,22 +6,18 @@ services:
     ports:
       - "3001:3001"
     environment:
-      - DATABASE_URL=postgresql://user:password@postgres:5432/fitness_booking
-      - NODE_ENV=development
-      - PORT=3001
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
+      - NODE_ENV=production
+    env_file:
+      - ./backend/.env
+    restart: unless-stopped
     depends_on:
       - postgres
-    command: npm run dev
 
   frontend:
     build: ./frontend
     ports:
       - "3000:80"
-    environment:
-      - REACT_APP_API_URL=http://localhost:3001
+    restart: unless-stopped
     depends_on:
       - backend
 
@@ -35,7 +31,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backend/src/db/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    restart: unless-stopped
 
 volumes:
   postgres_data:

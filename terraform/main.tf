@@ -45,8 +45,8 @@ PORT=3001
 NODE_ENV=production
 ENVFILE
     
-    # Run with docker-compose as root (since we're in user-data)
-    /usr/local/bin/docker-compose up -d
+    # Run with production docker-compose
+    /usr/local/bin/docker-compose -f docker-compose.prod.yml up -d
   EOF
 
   tags = {
