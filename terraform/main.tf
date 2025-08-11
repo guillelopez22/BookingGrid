@@ -18,6 +18,9 @@ resource "aws_instance" "app_server" {
 
   user_data = <<-EOF
     #!/bin/bash
+    exec > /var/log/user-data.log 2>&1
+    set -x
+    
     # Install Docker on Amazon Linux 2023
     dnf update -y
     dnf install -y docker git
@@ -28,12 +31,22 @@ resource "aws_instance" "app_server" {
     # Install Docker Compose
     curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
     chmod +x /usr/local/bin/docker-compose
+    ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
     
     # Clone and run the application
     cd /home/ec2-user
     git clone https://github.com/guillelopez22/BookingGrid.git
     cd BookingGrid/fitness-booking
-    docker-compose up -d
+    
+    # Create .env file for backend to use RDS  
+    cat > backend/.env <<ENVFILE
+DATABASE_URL=postgresql://dbadmin:changeme123!@fitness-booking-db.cs7ik8kuqfyp.us-east-1.rds.amazonaws.com:5432/fitness_booking
+PORT=3001
+NODE_ENV=production
+ENVFILE
+    
+    # Run with docker-compose as root (since we're in user-data)
+    /usr/local/bin/docker-compose up -d
   EOF
 
   tags = {
@@ -59,6 +72,13 @@ resource "aws_security_group" "app" {
   ingress {
     from_port   = 3000
     to_port     = 3001
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
