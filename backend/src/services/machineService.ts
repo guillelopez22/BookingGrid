@@ -76,15 +76,16 @@ export class MachineService {
 
       // Create lock
       const lockToken = uuidv4();
-      const expiresAt = new Date(Date.now() + this.LOCK_DURATION_MINUTES * 60 * 1000);
-
+      
+      // Use PostgreSQL to handle the timestamp properly
       await client.query(
         `INSERT INTO locks (machine_id, user_id, lock_token, expires_at, class_id) 
-         VALUES ($1, $2, $3, $4, $5)`,
-        [request.machine_id, request.user_id, lockToken, expiresAt, request.class_id || null]
+         VALUES ($1, $2, $3, NOW() + INTERVAL '${this.LOCK_DURATION_MINUTES} minutes', $4)`,
+        [request.machine_id, request.user_id, lockToken, request.class_id || null]
       );
 
       await client.query('COMMIT');
+      
       return { success: true, lock_token: lockToken };
     } catch (error) {
       await client.query('ROLLBACK');

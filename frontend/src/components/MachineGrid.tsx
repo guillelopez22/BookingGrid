@@ -4,7 +4,16 @@ import ConfirmationModal from './ConfirmationModal';
 
 const MachineGrid = () => {
   const [machines, setMachines] = useState([]);
-  const [userId] = useState(`user_${Math.random().toString(36).substr(2, 9)}`);
+  // Store userId in localStorage to persist across renders
+  const [userId] = useState(() => {
+    const stored = localStorage.getItem('userId');
+    if (stored) {
+      return stored;
+    }
+    const newId = `user_${Math.random().toString(36).substr(2, 9)}`;
+    localStorage.setItem('userId', newId);
+    return newId;
+  });
   const [selectedMachine, setSelectedMachine] = useState<any>(null);
   const [lockToken, setLockToken] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -43,7 +52,6 @@ const MachineGrid = () => {
         setSelectedMachine(machine);
         setLockToken(response.data.lock_token);
         setShowModal(true);
-        fetchMachines(); // Refresh the grid
       } else {
         alert(response.error || 'Failed to lock machine');
       }
