@@ -33,14 +33,6 @@ CREATE TABLE IF NOT EXISTS locks (
 );
 
 -- Index for faster queries
-CREATE INDEX idx_locks_expires_at ON locks(expires_at);
-CREATE INDEX idx_bookings_class_id ON bookings(class_id);
-CREATE INDEX idx_locks_class_id ON locks(class_id);
-
--- Function to clean expired locks
-CREATE OR REPLACE FUNCTION clean_expired_locks()
-RETURNS void AS $$
-BEGIN
-    DELETE FROM locks WHERE expires_at < CURRENT_TIMESTAMP;
-END;
-$$ LANGUAGE plpgsql;
+CREATE INDEX IF NOT EXISTS idx_locks_expires_at ON locks(expires_at);
+CREATE INDEX IF NOT EXISTS idx_bookings_class_id ON bookings(class_id);
+CREATE INDEX IF NOT EXISTS idx_locks_class_id ON locks(class_id);
