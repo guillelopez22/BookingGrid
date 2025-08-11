@@ -11,6 +11,13 @@ const MachineGrid = () => {
 
   useEffect(() => {
     fetchMachines();
+    
+    // Poll every 3 seconds for real-time updates
+    const interval = setInterval(() => {
+      fetchMachines();
+    }, 3000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const fetchMachines = async () => {
@@ -97,18 +104,18 @@ const MachineGrid = () => {
         <h1 className="text-3xl font-bold text-center mb-8 text-gray-800">
           Fitness Class - Select Your Machine
         </h1>
-        <div className="grid grid-cols-5 gap-3 md:gap-4">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
           {machines.map((machine: any) => (
             <div 
               key={machine.id} 
               className={`
-                border-2 rounded-lg p-4 text-center transition-all
+                border-2 rounded-lg p-2 sm:p-3 md:p-4 text-center transition-all
                 ${getMachineStatusClass(machine.status || 'available')}
               `}
               onClick={() => handleMachineClick(machine)}
             >
-              <div className="font-semibold text-lg">{machine.name}</div>
-              <div className="text-sm mt-1 capitalize">
+              <div className="font-semibold text-sm sm:text-base md:text-lg">{machine.name}</div>
+              <div className="text-xs sm:text-sm mt-1 capitalize">
                 {machine.status || 'available'}
               </div>
             </div>
