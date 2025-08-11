@@ -15,3 +15,25 @@ export const lockMachine = async (machineId: number, userId: string) => {
   });
   return response.json();
 };
+
+export const bookMachine = async (machineId: number, userId: string, lockToken: string) => {
+  const response = await fetch(`${API_BASE_URL}/machines/${machineId}/book`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ user_id: userId, lock_token: lockToken }),
+  });
+  return response.json();
+};
+
+export const releaseLock = async (machineId: number, lockToken: string) => {
+  const response = await fetch(`${API_BASE_URL}/machines/${machineId}/release`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ lock_token: lockToken }),
+  });
+  return response.json();
+};

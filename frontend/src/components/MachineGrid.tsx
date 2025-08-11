@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { getMachines, lockMachine } from '../services/api';
+import { getMachines, lockMachine, bookMachine, releaseLock } from '../services/api';
+import ConfirmationModal from './ConfirmationModal';
 import './MachineGrid.css';
 
 const MachineGrid = () => {
   const [machines, setMachines] = useState([]);
   const [userId] = useState(`user_${Math.random().toString(36).substr(2, 9)}`);
+  const [selectedMachine, setSelectedMachine] = useState<any>(null);
+  const [lockToken, setLockToken] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     fetchMachines();
@@ -30,7 +34,9 @@ const MachineGrid = () => {
     try {
       const response = await lockMachine(machine.id, userId);
       if (response.success) {
-        alert('Machine locked! You have 2 minutes to confirm.');
+        setSelectedMachine(machine);
+        setLockToken(response.data.lock_token);
+        setShowModal(true);
         fetchMachines(); // Refresh the grid
       } else {
         alert(response.error || 'Failed to lock machine');
@@ -38,6 +44,39 @@ const MachineGrid = () => {
     } catch (error) {
       console.error('Error locking machine:', error);
     }
+  };
+
+  const handleConfirmBooking = async () => {
+    if (!selectedMachine || !lockToken) return;
+    
+    try {
+      const response = await bookMachine(selectedMachine.id, userId, lockToken);
+      if (response.success) {
+        alert('Booking confirmed!');
+        setShowModal(false);
+        setSelectedMachine(null);
+        setLockToken(null);
+        fetchMachines();
+      } else {
+        alert(response.error || 'Failed to book machine');
+      }
+    } catch (error) {
+      console.error('Error booking machine:', error);
+    }
+  };
+
+  const handleCancelBooking = async () => {
+    if (selectedMachine && lockToken) {
+      try {
+        await releaseLock(selectedMachine.id, lockToken);
+      } catch (error) {
+        console.error('Error releasing lock:', error);
+      }
+    }
+    setShowModal(false);
+    setSelectedMachine(null);
+    setLockToken(null);
+    fetchMachines();
   };
 
   return (
@@ -55,6 +94,12 @@ const MachineGrid = () => {
           </div>
         ))}
       </div>
+      <ConfirmationModal
+        isOpen={showModal}
+        machine={selectedMachine}
+        onConfirm={handleConfirmBooking}
+        onCancel={handleCancelBooking}
+      />
     </div>
   );
 };
