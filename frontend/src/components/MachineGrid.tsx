@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { getMachines } from '../services/api';
+import { getMachines, lockMachine } from '../services/api';
 import './MachineGrid.css';
 
 const MachineGrid = () => {
   const [machines, setMachines] = useState([]);
+  const [userId] = useState(`user_${Math.random().toString(36).substr(2, 9)}`);
 
   useEffect(() => {
     fetchMachines();
@@ -20,6 +21,25 @@ const MachineGrid = () => {
     }
   };
 
+  const handleMachineClick = async (machine: any) => {
+    if (machine.status !== 'available') {
+      alert('Machine is not available');
+      return;
+    }
+    
+    try {
+      const response = await lockMachine(machine.id, userId);
+      if (response.success) {
+        alert('Machine locked! You have 2 minutes to confirm.');
+        fetchMachines(); // Refresh the grid
+      } else {
+        alert(response.error || 'Failed to lock machine');
+      }
+    } catch (error) {
+      console.error('Error locking machine:', error);
+    }
+  };
+
   return (
     <div>
       <h1>Fitness Class - Select Your Machine</h1>
@@ -28,6 +48,7 @@ const MachineGrid = () => {
           <div 
             key={machine.id} 
             className={`machine-item ${machine.status || 'available'}`}
+            onClick={() => handleMachineClick(machine)}
           >
             <div>{machine.name}</div>
             <small>{machine.status || 'available'}</small>
