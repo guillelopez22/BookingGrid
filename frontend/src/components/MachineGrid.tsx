@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getMachines } from '../services/api';
+import './MachineGrid.css';
 
 const MachineGrid = () => {
   const [machines, setMachines] = useState([]);
