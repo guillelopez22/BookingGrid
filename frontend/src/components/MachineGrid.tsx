@@ -193,9 +193,12 @@ const MachineGrid = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-center mb-8 text-gray-800">
+        <h1 className="text-3xl font-bold text-center mb-2 text-gray-800">
           Fitness Class - Select Your Machine
         </h1>
+        <p className="text-center text-sm text-gray-600 mb-6">
+          Your ID: {userId} (last 4: {userId.slice(-4)})
+        </p>
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
           {machines.map((machine) => (
             <div 
@@ -210,6 +213,13 @@ const MachineGrid = () => {
               <div className="text-xs sm:text-sm mt-1 capitalize">
                 {machine.status || 'available'}
               </div>
+              {(machine.locked_by || machine.booked_by) && (
+                <div className="text-xs mt-1 truncate">
+                  {machine.booked_by 
+                    ? (machine.booked_by === userId ? 'You' : `User: ${machine.booked_by.slice(-4)}`)
+                    : (machine.locked_by === userId ? 'You' : `User: ${machine.locked_by?.slice(-4)}`)}
+                </div>
+              )}
             </div>
           ))}
         </div>
