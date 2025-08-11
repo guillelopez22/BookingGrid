@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { getMachines, lockMachine, bookMachine, releaseLock } from '../services/api';
+import { Machine } from '../types';
 import ConfirmationModal from './ConfirmationModal';
 
 const MachineGrid = () => {
-  const [machines, setMachines] = useState([]);
-  // Store userId in localStorage to persist across renders
+  const [machines, setMachines] = useState<Machine[]>([]);
   const [userId] = useState(() => {
     const stored = localStorage.getItem('userId');
     if (stored) {
@@ -14,14 +14,15 @@ const MachineGrid = () => {
     localStorage.setItem('userId', newId);
     return newId;
   });
-  const [selectedMachine, setSelectedMachine] = useState<any>(null);
+  const [selectedMachine, setSelectedMachine] = useState<Machine | null>(null);
   const [lockToken, setLockToken] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [modalMode, setModalMode] = useState<'lock' | 'release' | 'info'>('lock');
+  const [userLocks, setUserLocks] = useState<Map<number, string>>(new Map());
 
   useEffect(() => {
     fetchMachines();
     
-    // Poll every 3 seconds for real-time updates
     const interval = setInterval(() => {
       fetchMachines();
     }, 3000);
@@ -40,54 +41,111 @@ const MachineGrid = () => {
     }
   };
 
-  const handleMachineClick = async (machine: any) => {
-    if (machine.status !== 'available') {
-      alert('Machine is not available');
+  const handleMachineClick = async (machine: Machine) => {
+    if (machine.status === 'locked' && machine.locked_by === userId) {
+      setSelectedMachine(machine);
+      setLockToken(userLocks.get(machine.id) || null);
+      setModalMode('release');
+      setShowModal(true);
       return;
     }
+    
+    if (machine.status !== 'available') {
+      setSelectedMachine(machine);
+      setModalMode('info');
+      setShowModal(true);
+      return;
+    }
+    
+    setMachines(prevMachines => 
+      prevMachines.map(m => 
+        m.id === machine.id 
+          ? { ...m, status: 'locked' as const, locked_by: userId }
+          : m
+      )
+    );
     
     try {
       const response = await lockMachine(machine.id, userId);
       if (response.success) {
+        setUserLocks(prev => new Map(prev).set(machine.id, response.data.lock_token));
         setSelectedMachine(machine);
         setLockToken(response.data.lock_token);
+        setModalMode('lock');
         setShowModal(true);
+        fetchMachines();
       } else {
+        fetchMachines();
         alert(response.error || 'Failed to lock machine');
       }
     } catch (error) {
       console.error('Error locking machine:', error);
+      fetchMachines();
     }
   };
 
-  const handleConfirmBooking = async () => {
-    if (!selectedMachine || !lockToken) return;
-    
-    try {
-      const response = await bookMachine(selectedMachine.id, userId, lockToken);
-      if (response.success) {
-        alert('Booking confirmed!');
-        setShowModal(false);
-        setSelectedMachine(null);
-        setLockToken(null);
+  const handleModalConfirm = async () => {
+    if (modalMode === 'lock') {
+      if (!selectedMachine || !lockToken) return;
+      
+      setMachines(prevMachines => 
+        prevMachines.map(m => 
+          m.id === selectedMachine.id 
+            ? { ...m, status: 'booked' as const, booked_by: userId, locked_by: null }
+            : m
+        )
+      );
+      setShowModal(false);
+      
+      try {
+        const response = await bookMachine(selectedMachine.id, userId, lockToken);
+        if (response.success) {
+          setUserLocks(prev => {
+            const newMap = new Map(prev);
+            newMap.delete(selectedMachine.id);
+            return newMap;
+          });
+          alert('Booking confirmed!');
+          setSelectedMachine(null);
+          setLockToken(null);
+          fetchMachines();
+        } else {
+          fetchMachines();
+          alert(response.error || 'Failed to book machine');
+        }
+      } catch (error) {
+        console.error('Error booking machine:', error);
         fetchMachines();
-      } else {
-        alert(response.error || 'Failed to book machine');
       }
-    } catch (error) {
-      console.error('Error booking machine:', error);
+    } else if (modalMode === 'release') {
+      handleModalCancel();
     }
   };
 
-  const handleCancelBooking = async () => {
-    if (selectedMachine && lockToken) {
+  const handleModalCancel = async () => {
+    setShowModal(false);
+    
+    if ((modalMode === 'lock' || modalMode === 'release') && selectedMachine && lockToken) {
+      setMachines(prevMachines => 
+        prevMachines.map(m => 
+          m.id === selectedMachine.id 
+            ? { ...m, status: 'available' as const, locked_by: null }
+            : m
+        )
+      );
+      
       try {
         await releaseLock(selectedMachine.id, lockToken);
+        setUserLocks(prev => {
+          const newMap = new Map(prev);
+          newMap.delete(selectedMachine.id);
+          return newMap;
+        });
       } catch (error) {
         console.error('Error releasing lock:', error);
       }
     }
-    setShowModal(false);
+    
     setSelectedMachine(null);
     setLockToken(null);
     fetchMachines();
@@ -113,7 +171,7 @@ const MachineGrid = () => {
           Fitness Class - Select Your Machine
         </h1>
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
-          {machines.map((machine: any) => (
+          {machines.map((machine) => (
             <div 
               key={machine.id} 
               className={`
@@ -150,8 +208,10 @@ const MachineGrid = () => {
       <ConfirmationModal
         isOpen={showModal}
         machine={selectedMachine}
-        onConfirm={handleConfirmBooking}
-        onCancel={handleCancelBooking}
+        mode={modalMode}
+        currentUserId={userId}
+        onConfirm={handleModalConfirm}
+        onCancel={handleModalCancel}
       />
     </div>
   );

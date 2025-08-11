@@ -4,10 +4,10 @@ export interface Machine {
   column_number: number;
   name: string;
   status: 'available' | 'locked' | 'booked';
-  locked_by?: string;
-  booked_by?: string;
-  lock_token?: string;
-  expires_at?: string;
+  locked_by?: string | null;
+  booked_by?: string | null;
+  lock_token?: string | null;
+  expires_at?: string | null;
 }
 
 export interface ApiResponse<T = any> {
