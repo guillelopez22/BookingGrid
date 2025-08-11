@@ -23,10 +23,14 @@ const MachineGrid = () => {
   return (
     <div>
       <h1>Fitness Class - Select Your Machine</h1>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
+      <div className="machine-grid">
         {machines.map((machine: any) => (
-          <div key={machine.id} style={{ border: '1px solid black', padding: '20px' }}>
-            {machine.name}
+          <div 
+            key={machine.id} 
+            className={`machine-item ${machine.status || 'available'}`}
+          >
+            <div>{machine.name}</div>
+            <small>{machine.status || 'available'}</small>
           </div>
         ))}
       </div>
