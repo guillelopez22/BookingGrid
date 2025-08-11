@@ -1,0 +1,27 @@
+.machine-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.machine-item {
+  border: 2px solid #ccc;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.machine-item.available {
+  background-color: #90EE90;
+}
+
+.machine-item.locked {
+  background-color: #FFFF99;
+}
+
+.machine-item.booked {
+  background-color: #FFB6C1;
+  cursor: not-allowed;
+}
