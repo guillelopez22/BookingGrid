@@ -98,12 +98,29 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                 {isOwnLock ? 'You have locked this machine.' : 'This machine is temporarily locked by another user.'}
               </p>
             )}
-            <button 
-              onClick={onCancel} 
-              className="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded transition-colors"
-            >
-              Close
-            </button>
+            {machine.status === 'booked' && isOwnBooking ? (
+              <div className="flex gap-3">
+                <button 
+                  onClick={onConfirm} 
+                  className="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded transition-colors"
+                >
+                  Cancel Booking
+                </button>
+                <button 
+                  onClick={onCancel} 
+                  className="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded transition-colors"
+                >
+                  Keep Booking
+                </button>
+              </div>
+            ) : (
+              <button 
+                onClick={onCancel} 
+                className="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded transition-colors"
+              >
+                Close
+              </button>
+            )}
           </>
         );
     }

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getMachines, lockMachine, bookMachine, releaseLock } from '../services/api';
+import { getMachines, lockMachine, bookMachine, releaseLock, unbookMachine } from '../services/api';
 import { Machine } from '../types';
 import ConfirmationModal from './ConfirmationModal';
 
@@ -119,6 +119,32 @@ const MachineGrid = () => {
       }
     } else if (modalMode === 'release') {
       handleModalCancel();
+    } else if (modalMode === 'info' && selectedMachine?.status === 'booked' && selectedMachine.booked_by === userId) {
+      if (!selectedMachine) return;
+      
+      setMachines(prevMachines => 
+        prevMachines.map(m => 
+          m.id === selectedMachine.id 
+            ? { ...m, status: 'available' as const, booked_by: null }
+            : m
+        )
+      );
+      setShowModal(false);
+      
+      try {
+        const response = await unbookMachine(selectedMachine.id, userId);
+        if (response.success) {
+          alert('Booking cancelled successfully!');
+          setSelectedMachine(null);
+          fetchMachines();
+        } else {
+          fetchMachines();
+          alert(response.error || 'Failed to cancel booking');
+        }
+      } catch (error) {
+        console.error('Error cancelling booking:', error);
+        fetchMachines();
+      }
     }
   };
 

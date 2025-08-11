@@ -163,4 +163,37 @@ export class MachineService {
       client.release();
     }
   }
+
+  static async unbookMachine(machineId: number, userId: string): Promise<{ success: boolean; error?: string }> {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const checkBooking = await client.query(
+        `SELECT * FROM bookings 
+         WHERE machine_id = $1 AND user_id = $2`,
+        [machineId, userId]
+      );
+
+      if (checkBooking.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return { success: false, error: 'No booking found for this user and machine' };
+      }
+
+      await client.query(
+        `DELETE FROM bookings 
+         WHERE machine_id = $1 AND user_id = $2`,
+        [machineId, userId]
+      );
+
+      await client.query('COMMIT');
+      return { success: true };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('Unbook machine error:', error);
+      return { success: false, error: 'Failed to unbook machine' };
+    } finally {
+      client.release();
+    }
+  }
 }

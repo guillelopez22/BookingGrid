@@ -160,4 +160,43 @@ router.post('/:id/release', async (req: Request, res: Response) => {
   }
 });
 
+// POST /api/machines/:id/unbook - Cancel a booking
+router.post('/:id/unbook', async (req: Request, res: Response) => {
+  try {
+    const machineId = parseInt(req.params.id);
+    const { user_id } = req.body;
+
+    if (!user_id) {
+      const response: ApiResponse = {
+        success: false,
+        error: 'user_id is required'
+      };
+      return res.status(400).json(response);
+    }
+
+    const result = await MachineService.unbookMachine(machineId, user_id);
+    
+    if (result.success) {
+      const response: ApiResponse = {
+        success: true,
+        data: { message: 'Booking cancelled successfully' }
+      };
+      res.json(response);
+    } else {
+      const response: ApiResponse = {
+        success: false,
+        error: result.error
+      };
+      res.status(404).json(response);
+    }
+  } catch (error) {
+    console.error('Error unbooking machine:', error);
+    const response: ApiResponse = {
+      success: false,
+      error: 'Failed to unbook machine'
+    };
+    res.status(500).json(response);
+  }
+});
+
 export default router;
